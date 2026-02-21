@@ -2,13 +2,13 @@ services:
   api:
     build: .
     ports:
-      - "2342:2342" # Agora sim: Host 2342 -> Container 2342
+      - "2342:2342"
     env_file:
       - .env
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
-    command: npm run start:dev
+      - /usr/src/app/dist
     depends_on:
       - postgres
       - redis
