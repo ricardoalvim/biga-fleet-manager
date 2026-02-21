@@ -5,6 +5,7 @@ import { GatewayModule } from './modules/gateway/gateway.module'
 import { TelemetryModule } from './modules/telemetry/telemetry.module'
 import { FleetModule } from './modules/fleet/fleet.module'
 import { MaintenanceModule } from './modules/maintenance/maintenance.module'
+import { CompanyModule } from './modules/company/company.module'
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module'
     TelemetryModule,
     FleetModule,
     MaintenanceModule,
+    CompanyModule,
   ],
 })
 export class AppModule {}

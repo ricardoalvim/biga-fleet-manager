@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   api:
     build: .
     ports:
-      - "2342:2342" # Sua porta de preferência
+      - "2342:2342" # Agora sim: Host 2342 -> Container 2342
     env_file:
       - .env
     volumes:
@@ -16,38 +14,45 @@ services:
       - redis
       - mongodb
     networks:
-      - sgbr-network
+      - sgbr_network
 
   postgres:
     image: postgres:15-alpine
+    container_name: sgbr_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - sgbr-network
+      - sgbr_network
 
   mongodb:
     image: mongo:6.0
+    container_name: sgbr_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: secret_password
     volumes:
       - mongo_data:/data/db
     networks:
-      - sgbr-network
+      - sgbr_network
 
   redis:
     image: redis:7-alpine
+    container_name: sgbr_redis
+    ports:
+      - "6379:6379"
     networks:
-      - sgbr-network
+      - sgbr_network
 
 networks:
-  sgbr-network:
+  sgbr_network:
     driver: bridge
 
 volumes:

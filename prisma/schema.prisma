@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CompanyType {
+  CLIENT
+  RENTAL
+  MAINTENANCE
+
+  @@map("company_type")
+}
+
+model Company {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @map("name")
+  taxId     String      @unique @map("tax_id")
+  type      CompanyType @map("type")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  // Relações de posse e responsabilidade
+  ownedChariots      Chariot[] @relation("Owner")
+  contractedChariots Chariot[] @relation("Contractor")
+  custodiedChariots  Chariot[] @relation("Custodian")
+
+  @@map("companies")
+}
+
+model Chariot {
+  id           String   @id @default(uuid()) @db.Uuid
+  plate        String   @unique @map("plate")
+  model        String   @map("model")
+  ownerId      String   @map("owner_id") @db.Uuid
+  contractorId String   @map("contractor_id") @db.Uuid
+  custodianId  String   @map("custodian_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  owner      Company @relation("Owner", fields: [ownerId], references: [id])
+  contractor Company @relation("Contractor", fields: [contractorId], references: [id])
+  custodian  Company @relation("Custodian", fields: [custodianId], references: [id])
+  trips      Trip[]
+
+  @@map("chariots")
+}
+
+model Trip {
+  id         String    @id @default(uuid()) @db.Uuid
+  chariotId  String    @map("chariot_id") @db.Uuid
+  startedAt  DateTime  @default(now()) @map("started_at")
+  endedAt    DateTime? @map("ended_at")
+  distanceKm Float     @default(0) @map("distance_km")
+  isHitched  Boolean   @default(true) @map("is_hitched")
+
+  chariot Chariot @relation(fields: [chariotId], references: [id])
+
+  @@map("trips")
+}
