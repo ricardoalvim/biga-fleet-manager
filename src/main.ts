@@ -1,12 +1,26 @@
 import { NestFactory } from '@nestjs/core'
+import { ValidationPipe } from '@nestjs/common'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
-  const port = process.env.PORT || 3000
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
 
+  const config = new DocumentBuilder()
+    .setTitle('SGBR - Sistema Gerenciador de Bigas Romanas')
+    .setDescription('Gateway de Ingestão IoT e Gestão de Frota do Império Romano')
+    .setVersion('1.0')
+    .addTag('Gateway', 'Ingestão de altíssima velocidade')
+    .build()
+
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('api/docs', app, document)
+
+  const port = process.env.PORT || 3000
   await app.listen(port)
-  console.log(`Coliseu aberto na porta ${port}`)
+  console.log(`[SGBR] Coliseu aberto na porta ${port}`)
+  console.log(`[SGBR] Pergaminhos da API em: http://localhost:${port}/api/docs`)
 }
 bootstrap()
