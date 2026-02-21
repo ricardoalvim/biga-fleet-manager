@@ -1,6 +1,11 @@
 import { PrismaClient, CompanyType } from '@prisma/client'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 
-const prisma = new PrismaClient()
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
+
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
     console.log('--- Starting Imperial Seeding (Raw Numbers) ---')
@@ -40,7 +45,7 @@ async function main() {
 
     // 4. Chariot (ABC-1234)
     const chariot = await prisma.chariot.upsert({
-        where: { plate: 'ABC1234' }, // Placa também sem hífen, seguindo sua lógica
+        where: { plate: 'ABC1234' },
         update: {},
         create: {
             plate: 'ABC1234',
