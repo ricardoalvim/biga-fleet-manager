@@ -2,6 +2,6 @@ import { Module } from '@nestjs/common'
 import { TelemetrySubscriberService } from './telemetry-subscriber.service'
 
 @Module({
-    providers: [TelemetrySubscriberService]
+  providers: [TelemetrySubscriberService],
 })
-export class TelemetryModule { }
+export class TelemetryModule {}

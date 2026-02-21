@@ -3,7 +3,7 @@ import { TelemetryGatewayController } from './telemetry-gateway.controller'
 import { TelemetryPublisherService } from './telemetry-publisher.service'
 
 @Module({
-    controllers: [TelemetryGatewayController],
-    providers: [TelemetryPublisherService]
+  controllers: [TelemetryGatewayController],
+  providers: [TelemetryPublisherService],
 })
-export class GatewayModule { }
+export class GatewayModule {}

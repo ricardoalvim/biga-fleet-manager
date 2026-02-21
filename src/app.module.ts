@@ -18,4 +18,4 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module'
     MaintenanceModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -2,11 +2,9 @@ version: '3.8'
 
 services:
   api:
-    build:
-      context: .
-      target: builder # Usa o estágio de builder para ter o TS e hot-reload
+    build: .
     ports:
-      - "2342:2342"
+      - "2342:2342" # Sua porta de preferência
     env_file:
       - .env
     volumes:
@@ -16,13 +14,12 @@ services:
     depends_on:
       - postgres
       - redis
+      - mongodb
     networks:
       - sgbr-network
 
   postgres:
     image: postgres:15-alpine
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -32,12 +29,20 @@ services:
     networks:
       - sgbr-network
 
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret_password
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - sgbr-network
+
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
     networks:
       - sgbr-network
 
@@ -47,4 +52,4 @@ networks:
 
 volumes:
   postgres_data:
-  redis_data:
+  mongo_data:
