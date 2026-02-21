@@ -6,6 +6,7 @@ import { TelemetryModule } from './modules/telemetry/telemetry.module'
 import { FleetModule } from './modules/fleet/fleet.module'
 import { MaintenanceModule } from './modules/maintenance/maintenance.module'
 import { CompanyModule } from './modules/company/company.module'
+import { TripModule } from './modules/trip/trip.module'
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CompanyModule } from './modules/company/company.module'
     FleetModule,
     MaintenanceModule,
     CompanyModule,
+    TripModule
   ],
 })
-export class AppModule {}
+export class AppModule { }
