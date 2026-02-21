@@ -4,7 +4,7 @@ import { FleetController } from './fleet.controller'
 import { PrismaService } from '../../shared/infrastructure/prisma/prisma.service'
 
 @Module({
-    controllers: [FleetController],
-    providers: [FleetService, PrismaService],
+  controllers: [FleetController],
+  providers: [FleetService, PrismaService],
 })
-export class FleetModule { }
+export class FleetModule {}

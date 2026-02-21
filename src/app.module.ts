@@ -12,13 +12,13 @@ import { MongooseModule } from '@nestjs/mongoose'
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGO_URL')
-      })
+        uri: config.get<string>('MONGO_URL'),
+      }),
     }),
     RedisModule,
     GatewayModule,
@@ -26,7 +26,7 @@ import { MongooseModule } from '@nestjs/mongoose'
     FleetModule,
     MaintenanceModule,
     CompanyModule,
-    TripModule
-  ]
+    TripModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

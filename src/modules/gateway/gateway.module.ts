@@ -8,4 +8,4 @@ import { RedisModule } from 'src/shared/infrastructure/redis/redis.module'
   controllers: [TelemetryGatewayController],
   providers: [TelemetryPublisherService],
 })
-export class GatewayModule { }
+export class GatewayModule {}

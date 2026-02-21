@@ -1,55 +1,68 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../shared/infrastructure/prisma/prisma.service'
-import { CreateTripDto } from './dto/create-trip.dto'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+import { Telemetry } from '../telemetry/schemas/telemetry.schema'
+import { MapUtils } from '../../shared/utils/map.utils'
 
 @Injectable()
 export class TripService {
-    constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectModel(Telemetry.name) private readonly telemetryModel: Model<Telemetry>,
+  ) {}
 
-    async startTrip(dto: CreateTripDto) {
-        const chariot = await this.prisma.chariot.findUnique({
-            where: { id: dto.chariotId },
-        })
+  async findActiveByChariot(chariotId: string) {
+    return this.prisma.trip.findFirst({
+      where: { chariotId, endedAt: null },
+    })
+  }
 
-        if (!chariot) {
-            throw new NotFoundException('Biga não encontrada nas garagens do Império.')
-        }
+  async startTrip(chariotId: string) {
+    const active = await this.findActiveByChariot(chariotId)
+    if (active) return active
 
-        const activeTrip = await this.prisma.trip.findFirst({
-            where: { chariotId: dto.chariotId, endedAt: null },
-        })
+    return this.prisma.trip.create({
+      data: {
+        chariotId,
+        isHitched: true,
+        startedAt: new Date(),
+      },
+    })
+  }
 
-        if (activeTrip) {
-            throw new BadRequestException('Esta biga já está na rua em uma corrida ativa!')
-        }
+  async finishTrip(tripId: string) {
+    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
+    if (!trip || trip.endedAt) return trip
 
-        return this.prisma.trip.create({
-            data: {
-                chariotId: dto.chariotId,
-                isHitched: true,
-            },
-        })
+    // Busca o rastro completo para calcular a distância real
+    const points = await this.telemetryModel.find({ tripId }).sort({ timestamp: 1 })
+
+    let totalDistance = 0
+
+    if (points.length >= 2) {
+      for (let i = 0; i < points.length - 1; i++) {
+        totalDistance += MapUtils.getDistance(
+          { lat: points[i].latitude, lng: points[i].longitude },
+          { lat: points[i + 1].latitude, lng: points[i + 1].longitude },
+        )
+      }
     }
 
-    async finishTrip(tripId: string) {
-        const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
+    return this.prisma.trip.update({
+      where: { id: tripId },
+      data: {
+        endedAt: new Date(),
+        isHitched: false,
+        distanceKm: Number(totalDistance.toFixed(2)),
+      },
+    })
+  }
 
-        if (!trip) throw new NotFoundException('Corrida não encontrada.')
-        if (trip.endedAt) throw new BadRequestException('Esta corrida já foi finalizada.')
-
-        return this.prisma.trip.update({
-            where: { id: tripId },
-            data: {
-                endedAt: new Date(),
-                isHitched: false,
-            },
-        })
-    }
-
-    async findActiveTrips() {
-        return this.prisma.trip.findMany({
-            where: { endedAt: null },
-            include: { chariot: true },
-        })
-    }
+  async findActiveTrips() {
+    return this.prisma.trip.findMany({
+      where: { endedAt: null },
+      include: { chariot: true },
+    })
+  }
 }

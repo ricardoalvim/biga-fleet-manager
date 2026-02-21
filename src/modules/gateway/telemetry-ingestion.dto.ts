@@ -1,4 +1,13 @@
-import { IsString, IsNumber, IsNotEmpty, Min, Max, IsBoolean, IsUUID, IsOptional } from 'class-validator'
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  Min,
+  Max,
+  IsBoolean,
+  IsUUID,
+  IsOptional,
+} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 
 export class TelemetryIngestionDto {
