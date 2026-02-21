@@ -4,66 +4,49 @@ import { PrismaPg } from '@prisma/adapter-pg'
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
-
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-    console.log('--- Starting Imperial Seeding (Raw Numbers) ---')
+    console.log('--- ⚔️  Iniciando Seed da Legião Romana ---')
 
-    // 1. Rental (Owner)
     const rental = await prisma.company.upsert({
         where: { taxId: '11111111000111' },
         update: {},
-        create: {
-            name: 'Locabigas Ltda',
-            taxId: '11111111000111',
-            type: CompanyType.RENTAL
-        }
+        create: { name: 'Locabigas Ltda', taxId: '11111111000111', type: CompanyType.RENTAL }
     })
 
-    // 2. Maintenance (Custodian)
     const maintenance = await prisma.company.upsert({
         where: { taxId: '22222222000122' },
         update: {},
-        create: {
-            name: 'Companhia de Ferreiros S/A',
-            taxId: '22222222000122',
-            type: CompanyType.MAINTENANCE
-        }
+        create: { name: 'Ferreiros do Império', taxId: '22222222000122', type: CompanyType.MAINTENANCE }
     })
 
-    // 3. Client (Contractor)
     const client = await prisma.company.upsert({
         where: { taxId: '33333333000133' },
         update: {},
-        create: {
-            name: 'Império Transportes Ltda',
-            taxId: '33333333000133',
-            type: CompanyType.CLIENT
-        }
+        create: { name: 'Transportes César', taxId: '33333333000133', type: CompanyType.CLIENT }
     })
 
-    // 4. Chariot (ABC-1234)
-    const chariot = await prisma.chariot.upsert({
-        where: { plate: 'ABC1234' },
-        update: {},
-        create: {
-            plate: 'ABC1234',
-            model: 'Biga Premium V8',
-            ownerId: rental.id,
-            custodianId: maintenance.id,
-            contractorId: client.id
-        }
+    // Criando 20 bigas automaticamente
+    const chariotPromises = Array.from({ length: 20 }).map((_, i) => {
+        const plate = `ROM${1000 + i}`
+        return prisma.chariot.upsert({
+            where: { plate },
+            update: {},
+            create: {
+                plate,
+                model: i % 2 === 0 ? 'Biga Premium V8' : 'Quadriga Sport V12',
+                ownerId: rental.id,
+                custodianId: maintenance.id,
+                contractorId: client.id
+            }
+        })
     })
 
-    console.log('--- Seed Finished Successfully ---')
+    await Promise.all(chariotPromises)
+    console.log('--- ✅ Frota de 20 bigas pronta para o combate ---')
 }
 
 main()
-    .catch((e) => {
-        console.error(e)
-        process.exit(1)
-    })
-    .finally(async () => {
-        await prisma.$disconnect()
-    })
+    .catch((e) => { console.error(e); process.exit(1) })
+    .finally(async () => { await prisma.$disconnect() })
