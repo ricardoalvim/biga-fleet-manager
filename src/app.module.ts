@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config' // <-- ADICIONA O ConfigService AQUI
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { RedisModule } from './shared/infrastructure/redis/redis.module'
 import { GatewayModule } from './modules/gateway/gateway.module'
 import { TelemetryModule } from './modules/telemetry/telemetry.module'
@@ -8,6 +8,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module'
 import { CompanyModule } from './modules/company/company.module'
 import { TripModule } from './modules/trip/trip.module'
 import { MongooseModule } from '@nestjs/mongoose'
+import { HealthModule } from './modules/health/health.module'
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MongooseModule } from '@nestjs/mongoose'
     MaintenanceModule,
     CompanyModule,
     TripModule,
+    HealthModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
