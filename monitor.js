@@ -24,6 +24,8 @@ async function updateDashboard() {
 
     } catch (e) {
         console.log('Aguardando API ficar online...')
+        console.log('================================================')
+        console.log('💥 Erro ao conectar: ', e.message)
     }
 }
 

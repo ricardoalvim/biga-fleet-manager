@@ -37,6 +37,7 @@ export class TripService {
     const trip = await this.prisma.trip.findUnique({ where: { id: tripId } })
     if (!trip || trip.endedAt) return trip
 
+    await new Promise(resolve => setTimeout(resolve, 500))
     const points = await this.telemetryModel.find({ tripId }).sort({ timestamp: 1 })
 
     let totalDistance = 0
