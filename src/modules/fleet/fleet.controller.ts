@@ -2,11 +2,14 @@ import { Controller, Post, Get, Body, HttpCode, HttpStatus } from '@nestjs/commo
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger'
 import { FleetService } from './fleet.service'
 import { CreateChariotDto } from './dto/create-chariot.dto'
+import { FleetOverviewService } from './fleet-overview.service'
 
 @ApiTags('Fleet (Chariots)')
 @Controller('fleet')
 export class FleetController {
-  constructor(private readonly fleetService: FleetService) {}
+  constructor(
+    private readonly fleetService: FleetService,
+    private readonly fleetOverviewService: FleetOverviewService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -23,5 +26,11 @@ export class FleetController {
   @ApiResponse({ status: 200, description: 'Frota listada com sucesso.' })
   async findAll() {
     return this.fleetService.findAll()
+  }
+
+  @Get('overview')
+  @ApiOperation({ summary: 'Métricas consolidadas para o Dashboard do Imperador' })
+  async getOverview() {
+    return this.fleetOverviewService.getDashboardStats()
   }
 }
