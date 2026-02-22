@@ -16,10 +16,10 @@ export class TelemetryIngestionDto {
   @IsNotEmpty()
   bigaId: string
 
-  @ApiProperty({ example: 'uuid-da-trip', description: 'ID da Corrida Ativa' })
+  @ApiProperty({ example: 'uuid-da-trip', description: 'ID da Corrida (Opcional)' })
   @IsUUID()
-  @IsNotEmpty()
-  tripId: string
+  @IsOptional()
+  tripId?: string
 
   @ApiProperty({ example: 41.8902, description: 'Latitude atual' })
   @IsNumber()
