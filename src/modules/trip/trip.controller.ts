@@ -6,7 +6,7 @@ import { CreateTripDto } from './dto/create-trip.dto'
 @ApiTags('Trips (Corridas)')
 @Controller('trips')
 export class TripController {
-  constructor(private readonly tripService: TripService) {}
+  constructor(private readonly tripService: TripService) { }
 
   @Post('start')
   @HttpCode(HttpStatus.CREATED)
@@ -29,5 +29,11 @@ export class TripController {
   @ApiOperation({ summary: 'Lista todas as bigas correndo nas ruas neste momento' })
   async findActive() {
     return this.tripService.findActiveTrips()
+  }
+
+  @Get(':id/report')
+  @ApiOperation({ summary: 'Gera o relatório completo de rastro e performance da corrida' })
+  async getReport(@Param('id') id: string) {
+    return this.tripService.getTripReport(id)
   }
 }
