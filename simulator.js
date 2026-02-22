@@ -1,4 +1,6 @@
 const BASE_URL = 'http://localhost:2342'
+const TRIP_TARGET = 100000 // A META IMPERIAL
+const PING_INTERVAL = 50 // 50ms (Acelerei para atingirmos o volume mais rápido)
 
 // O trajeto que você mapeou (Lng, Lat -> Convertido para Lat, Lng para o nosso DTO)
 const geoJsonData = {
@@ -1290,59 +1292,56 @@ const waypoints = geoJsonData.features.map(f => ({
 }))
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+let totalCompletedTrips = 0
 
-async function runUnespLoop(chariot, workerId) {
-    console.log(`\n[Biga ${workerId}] 🚩 Iniciando Circuito Unesp -> FEMA -> Unesp (${chariot.plate})`)
-
-    for (let i = 0; i < waypoints.length; i++) {
-        const pos = waypoints[i]
-        const isLastPoint = i === waypoints.length - 1
-
-        const payload = {
-            bigaId: chariot.id,
-            lat: pos.lat,
-            lng: pos.lng,
-            // Velocidade simulada variando entre 30 e 50 km/h nas rodovias
-            speed: isLastPoint ? 0 : Math.floor(Math.random() * 20) + 30,
-            // O gatilho de ignição (isHitched) só desliga no último ponto do CEDAP
-            isHitched: !isLastPoint,
-            timestamp: new Date().toISOString()
-        }
-
+async function chariotWorker(chariot, workerId) {
+    while (totalCompletedTrips < TRIP_TARGET) {
         try {
-            const res = await fetch(`${BASE_URL}/telemetry/ingest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
+            // 🚩 Início da Trip
+            for (let i = 0; i < waypoints.length; i++) {
+                const pos = waypoints[i]
+                const isLastPoint = i === waypoints.length - 1
 
-            if (res.ok) {
-                if (i % 20 === 0) {
-                    console.log(`📡 [Biga ${workerId}] Passando por: ${(i / waypoints.length * 100).toFixed(0)}% do trajeto...`)
+                const payload = {
+                    bigaId: chariot.id,
+                    lat: pos.lat,
+                    lng: pos.lng,
+                    speed: isLastPoint ? 0 : Math.floor(Math.random() * 20) + 30,
+                    isHitched: !isLastPoint, // Gatilho de fechamento no último ponto
+                    timestamp: new Date().toISOString()
                 }
+
+                await fetch(`${BASE_URL}/telemetry/ingest`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+
+                await sleep(PING_INTERVAL)
             }
+
+            totalCompletedTrips++
+            if (totalCompletedTrips % 10 === 0) {
+                console.log(`[Legião] Progresso: ${totalCompletedTrips}/${TRIP_TARGET} trips concluídas.`)
+            }
+
         } catch (e) {
-            console.error(`💥 Falha no ponto ${i}:`, e.message)
+            console.error(`💥 Biga ${chariot.plate} tropeçou:`, e.message)
+            await sleep(5000) // Descanso antes de tentar a próxima jornada
         }
-
-        // Delay de 500ms para a simulação não ser instantânea, mas rápida o suficiente
-        await sleep(500)
     }
-
-    console.log(`🏁 [Biga ${workerId}] Circuito concluído! Trip finalizada e odômetro atualizado.`)
 }
 
-async function startSimulation() {
+async function startEnduranceTest() {
+    console.log(`🏛️  Mobilizando a frota completa para 100.000 jornadas em Assis...\n`)
+
     const fleetRes = await fetch(`${BASE_URL}/fleet`)
     const fleet = await fleetRes.json()
 
-    if (!fleet.length) return console.error('Garagem vazia!')
-
-    // Vamos colocar as primeiras 5 bigas da frota para fazer esse trajeto simultaneamente
-    const testFleet = fleet.slice(0, 5)
-    console.log(`🏛️  Mobilizando ${testFleet.length} bigas para o circuito Unesp...\n`)
-
-    testFleet.forEach((chariot, index) => runUnespLoop(chariot, index))
+    // Lança toda a frota disponível em paralelo
+    fleet.forEach((chariot, index) => {
+        chariotWorker(chariot, index)
+    })
 }
 
-startSimulation()
+startEnduranceTest()
