@@ -2,16 +2,19 @@ const BASE_URL = 'http://localhost:2342'
 
 async function updateDashboard() {
     try {
-        const res = await fetch(`${BASE_URL}/fleet/overview`)
+        const tenantId = process.env.TENANT_ID || '00000000-0000-4000-8000-000000000001'
+        const res = await fetch(`${BASE_URL}/fleet/overview`, {
+            headers: { 'x-tenant-id': tenantId }
+        })
         const data = await res.json()
 
         console.clear()
         console.log('================================================')
-        console.log('🏛️  Biga Fleet Manager - REAL-TIME MONITOR')
+        console.log('Fleet Manager - REAL-TIME MONITOR')
         console.log(`📅 Data: ${new Date().toLocaleString('pt-BR')}`)
         console.log('================================================')
         console.log('\n📈 SAÚDE DA FROTA:')
-        console.log(`   - Bigas Ativas agora:  ${data.fleetStatus.activeChariots}`)
+        console.log(`   - Veículos ativos agora:  ${data.fleetStatus.activeVehicles}`)
         console.log(`   - Viagens hoje:        ${data.fleetStatus.totalTripsToday}`)
         console.log(`   - KM Total hoje:       ${data.fleetStatus.totalDistanceTodayKm} km`)
 

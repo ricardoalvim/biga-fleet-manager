@@ -3,7 +3,12 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": false,
-    "assets": [],
+    "assets": [
+      {
+        "include": "prisma/**/*.json",
+        "watchAssets": true
+      }
+    ],
     "manualRestart": false
   }
 }

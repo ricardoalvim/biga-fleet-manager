@@ -1,0 +1,74 @@
+// use prisma-next
+
+native_enum CompanyType {
+  CLIENT      = "CLIENT"
+  RENTAL      = "RENTAL"
+  MAINTENANCE = "MAINTENANCE"
+
+  @@map("company_type")
+}
+
+model Tenant {
+  id        Uuid               @id @default(uuid())
+  slug      String             @unique
+  name      String
+  createdAt TimestamptzString  @default(now()) @map("created_at")
+
+  companies Company[]
+  vehicles  Vehicle[]
+  trips     Trip[]
+
+  @@map("tenants")
+}
+
+model Company {
+  id        Uuid               @id @default(uuid())
+  tenantId  Uuid               @map("tenant_id")
+  name      String
+  taxId     String             @map("tax_id")
+  type      pg.enum(CompanyType)
+  createdAt TimestamptzString  @default(now()) @map("created_at")
+
+  tenant             Tenant    @relation(fields: [tenantId], references: [id])
+  ownedVehicles      Vehicle[] @relation("Owner")
+  contractedVehicles Vehicle[] @relation("Contractor")
+  custodiedVehicles  Vehicle[] @relation("Custodian")
+
+  @@unique([tenantId, taxId])
+  @@map("companies")
+}
+
+model Vehicle {
+  id           Uuid               @id @default(uuid())
+  tenantId     Uuid               @map("tenant_id")
+  plate        String
+  model        String
+  ownerId      Uuid               @map("owner_id")
+  contractorId Uuid               @map("contractor_id")
+  custodianId  Uuid               @map("custodian_id")
+  createdAt    TimestamptzString  @default(now()) @map("created_at")
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id])
+  owner      Company @relation("Owner", fields: [ownerId], references: [id])
+  contractor Company @relation("Contractor", fields: [contractorId], references: [id])
+  custodian  Company @relation("Custodian", fields: [custodianId], references: [id])
+  trips      Trip[]
+
+  @@unique([tenantId, plate])
+  @@map("vehicles")
+}
+
+model Trip {
+  id         Uuid                @id @default(uuid())
+  tenantId   Uuid                @map("tenant_id")
+  vehicleId  Uuid                @map("vehicle_id")
+  startedAt  TimestamptzString   @default(now()) @map("started_at")
+  endedAt    TimestamptzString?  @map("ended_at")
+  distanceKm Float               @default(0) @map("distance_km")
+  ignition   Boolean             @default(true)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@map("trips")
+}

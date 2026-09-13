@@ -1,0 +1,24 @@
+{
+  "name": "@biga/frontend-enterprise-portal",
+  "version": "1.0.0",
+  "description": "Biga Fleet Manager - Frontend Enterprise Portal (Global Admin, Tenant White-Label, Dynamic RBAC, Swagger Marketplace & Onboarding)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^1.16.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^6.0.0",
+    "vite": "^6.0.0"
+  }
+}
+

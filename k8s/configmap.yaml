@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: biga-fleet-config
+  namespace: biga-fleet
+data:
+  NODE_ENV: "production"
+  PORT: "2342"
+  REDIS_STREAMING_CHANNEL: "telemetry_realtime_stream"
+  REDIS_PORTAL_CHANNEL: "portal_events_stream"
+  REDIS_WEBHOOK_CHANNEL: "platform_webhooks_stream"
+

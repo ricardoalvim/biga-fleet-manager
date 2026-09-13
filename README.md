@@ -1,14 +1,24 @@
-# 🐎 Biga Fleet Manager
+# Fleet Manager
 
 A real-time asset tracking and fleet management system built with **Polyglot Persistence** architecture and asynchronous processing. Designed to handle high-volume telemetry ingestion while maintaining business data consistency.
 
 ## 📋 Overview
 
-Biga Fleet Manager is a comprehensive fleet management solution specifically designed for managing Roman chariot ("biga") fleets. The system provides real-time tracking, telemetry processing, geolocation services, and automated trip lifecycle management. Built with modern microservices architecture and polyglot persistence to ensure scalability, reliability, and performance.
+Biga Fleet Manager is a **PIMS de frotas** (the name is a 2013 joke about a Roman chariot rental running on JPA/JSF). Domain language is **vehicle**. It is a **modular monolith** on NestJS 12 (ESM + Standard Schema): multi-tenancy, relational fleet data on PostgreSQL, MongoDB telemetry, and an agnostic IoT ingestion gateway.
 
 ## 🏗️ Architecture & Technical Decisions
 
-The project is architected to support high-volume telemetry ingestion without compromising business data consistency. It employs a sophisticated data strategy that leverages the strengths of different database technologies.
+Modular monolith with isolated bounded contexts:
+
+| Context | Path | Responsibility |
+|---|---|---|
+| Platform | `src/platform/` | Config (Zod), Prisma, Redis, Mongo, health, geocoding |
+| Tenancy | `src/tenancy/` | Tenant CRUD and `x-tenant-id` request context |
+| Fleet | `src/fleet/` | Companies, vehicles, trips, dashboard (PostgreSQL) |
+| Ingestion | `src/ingestion/` | Protocol-agnostic IoT ingest (validate + Redis publish, HTTP 202) |
+| Telemetry | `src/telemetry/` | Mongo writes and trip lifecycle from the bus |
+
+The ingestion gateway does **not** start or finish trips. It accepts `{ tenantId, deviceId, lat, lng, speed, ignition }` and publishes to Redis. Telemetry processing maps `deviceId` to a vehicle and owns the trip lifecycle.
 
 ### 💾 Polyglot Persistence Strategy
 
@@ -27,7 +37,7 @@ The project is architected to support high-volume telemetry ingestion without co
 ## 🚀 Features
 
 ### Core Functionality
-- **Fleet Management:** CRUD operations for chariots, companies, and fleet assignments
+- **Fleet Management:** CRUD operations for vehicles, companies, and fleet assignments
 - **Real-time Tracking:** GPS telemetry ingestion and processing
 - **Trip Management:** Automated trip lifecycle with start/end detection
 - **Geolocation Services:** Address resolution with intelligent caching
@@ -44,9 +54,9 @@ The project is architected to support high-volume telemetry ingestion without co
 ## 🛠️ Technology Stack
 
 ### Backend
-- **Framework:** NestJS (Node.js)
+- **Framework:** NestJS 12 (ESM, Standard Schema / Zod)
 - **Language:** TypeScript
-- **ORM:** Prisma (PostgreSQL)
+- **ORM:** Prisma ORM 8 (`@prisma/orm-postgres`)
 - **ODM:** Mongoose (MongoDB)
 - **Cache/Messaging:** Redis (ioredis)
 
@@ -58,8 +68,8 @@ The project is architected to support high-volume telemetry ingestion without co
 ### Infrastructure
 - **Containerization:** Docker & Docker Compose
 - **API Documentation:** Swagger/OpenAPI
-- **Validation:** class-validator & class-transformer
-- **Testing:** Jest
+- **Validation:** Zod (Standard Schema)
+- **Testing:** Vitest
 - **Linting:** ESLint
 - **Code Formatting:** Prettier
 
@@ -68,28 +78,16 @@ The project is architected to support high-volume telemetry ingestion without co
 ```
 biga-fleet-manager/
 ├── src/
-│   ├── modules/
-│   │   ├── company/          # Company management
-│   │   ├── fleet/            # Fleet operations
-│   │   ├── gateway/          # Telemetry ingestion
-│   │   ├── telemetry/        # Telemetry processing
-│   │   ├── trip/             # Trip management
-│   │   ├── health/           # Health checks
-│   │   └── maintenance/      # Maintenance module
-│   ├── shared/
-│   │   ├── infrastructure/   # Database & Redis setup
-│   │   └── utils/            # Utilities (geocoding, maps)
-│   └── app.module.ts         # Main application module
+│   ├── tenancy/              # Multi-tenancy
+│   ├── fleet/                # Relational domain
+│   ├── ingestion/            # Agnostic IoT gateway
+│   ├── telemetry/            # Mongo + trip events
+│   ├── platform/             # Prisma, Redis, Mongo, health, geo
+│   └── app.module.ts
 ├── prisma/
-│   ├── schema.prisma         # Database schema
-│   ├── seed.ts              # Database seeding
-│   └── migrations/          # Database migrations
-├── test/                    # End-to-end tests
-├── monitor.js               # Monitoring utilities
-├── simulator.js             # Telemetry simulator
-├── Dockerfile               # Container definition
-├── docker-compose.yml       # Multi-container setup
-└── package.json             # Dependencies & scripts
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
 ```
 
 ## 🚀 Quick Start
@@ -127,7 +125,7 @@ biga-fleet-manager/
    
    # Redis
    REDIS_URL=redis://localhost:6379
-   REDIS_TELEMETRY_CHANNEL=biga_telemetry_stream
+   REDIS_TELEMETRY_CHANNEL=vehicle_telemetry_stream
    ```
 
 3. **Start infrastructure:**
@@ -140,23 +138,25 @@ biga-fleet-manager/
    npm install
    ```
 
-5. **Run database migrations:**
+5. **Emit the Prisma contract:**
    ```bash
-   npx prisma migrate dev
-   npx prisma generate
+   npx prisma contract emit
    ```
 
-6. **Seed the database:**
+6. **Apply schema to Postgres (empty DB):**
    ```bash
-   npx prisma db seed
+   npx prisma db init
+   npm run db:seed
    ```
+
+   If the database already has the Prisma 7 tables, skip `db init` and run `npx prisma db sign` after reviewing `prisma db verify`.
 
 7. **Start the application:**
    ```bash
    npm run start:dev
    ```
 
-The API will be available at `http://localhost:2342` and documentation at `http://localhost:2342/api`.
+The API will be available at `http://localhost:2342` and documentation at `http://localhost:2342/api/docs`.
 
 ## 📡 API Usage
 
@@ -165,21 +165,26 @@ Send GPS telemetry data via POST to `/telemetry/ingest`:
 
 ```json
 {
-  "chariotId": "chariot-uuid",
-  "latitude": -23.550520,
-  "longitude": -46.633308,
+  "tenantId": "00000000-0000-4000-8000-000000000001",
+  "deviceId": "vehicle-uuid",
+  "lat": -23.550520,
+  "lng": -46.633308,
   "speed": 45.5,
   "ignition": true,
   "timestamp": "2024-01-15T10:30:00Z"
 }
 ```
 
+Relational fleet routes require header `x-tenant-id` (or `x-tenant-slug`).
+
 ### Fleet Management
-- `GET /fleet` - List all chariots
-- `POST /fleet` - Create new chariot
+- `GET /vehicles` - List vehicles in the tenant
+- `POST /vehicles` - Create vehicle
+- `GET /fleet/overview` - Fleet dashboard metrics
 - `GET /companies` - List companies
 - `POST /companies` - Create company
-- `GET /trips` - List trips
+- `GET /tenants` - List tenants
+- `GET /trips/active` - List active trips
 
 ## 🧪 Testing & Development
 
@@ -187,12 +192,6 @@ Send GPS telemetry data via POST to `/telemetry/ingest`:
 ```bash
 # Unit tests
 npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
 ```
 
 ### Development Scripts
@@ -231,10 +230,11 @@ node monitor.js
 - `REDIS_TELEMETRY_CHANNEL`: Pub/Sub channel for telemetry
 
 ### Database Schema
-The system uses three main entities:
-- **Companies:** Fleet owners, contractors, and maintenance providers
-- **Chariots:** Individual vehicles with ownership relationships
-- **Trips:** Journey records with automatic lifecycle management
+The system uses four main entities:
+- **Tenants:** Organizations (locadoras) isolated by `x-tenant-id`
+- **Companies:** Fleet owners, contractors, and maintenance providers (scoped by tenant)
+- **Vehicles:** Individual vehicles with ownership relationships (scoped by tenant)
+- **Trips:** Journey records with automatic lifecycle management (scoped by tenant)
 
 ## 🤝 Contributing
 

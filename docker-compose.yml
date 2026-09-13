@@ -1,60 +1,80 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      target: runner
     ports:
       - "2342:2342"
     env_file:
       - .env
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
     depends_on:
       - postgres
       - redis
       - mongodb
     networks:
-      - sgbr_network
+      - biga_network
 
   postgres:
     image: postgres:15-alpine
-    container_name: sgbr_postgres
+    container_name: biga_postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-biga_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-biga_password}
+      POSTGRES_DB: ${POSTGRES_DB:-biga_fleet}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - sgbr_network
+      - biga_network
 
   mongodb:
-    image: mongo:6.0
-    container_name: sgbr_mongodb
+    image: mongo:7-jammy
+    container_name: biga_mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-biga_mongo}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-biga_mongo_pass}
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
-      - sgbr_network
+      - biga_network
 
   redis:
     image: redis:7-alpine
-    container_name: sgbr_redis
+    container_name: biga_redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     networks:
-      - sgbr_network
+      - biga_network
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: biga_prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    depends_on:
+      - api
+    networks:
+      - biga_network
 
 networks:
-  sgbr_network:
+  biga_network:
     driver: bridge
 
 volumes:
   postgres_data:
   mongo_data:
+  redis_data:
+  prometheus_data:

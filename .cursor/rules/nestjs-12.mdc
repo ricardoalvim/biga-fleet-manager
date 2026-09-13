@@ -1,0 +1,16 @@
+---
+description: NestJS 12 stack — ESM, Standard Schema, Prisma, polyglot persistence
+alwaysApply: true
+---
+
+# NestJS 12 stack
+
+This is a **NestJS 12 ESM** app (`"type": "module"`, TypeScript `NodeNext`). Relative imports **must** use `.js` extensions.
+
+- Node.js **20.19+** or **22.12+**. Do not use Nest 11 patterns (`ValidationPipe` + `class-validator` DTOs, CJS `require`, `__dirname`).
+- Validate HTTP input with **Standard Schema** (Zod) via `@Body({ schema })` / `@Param({ schema })` and `StandardSchemaValidationPipe`. Infer types with `z.infer`.
+- Validate env with Zod on `ConfigModule.forRoot({ validationSchema })`.
+- Persistence: **Prisma ORM 8** (`prisma@8.0.0-rc.14` + `@prisma/orm-postgres`) on PostgreSQL for transactional data; **MongoDB (Mongoose)** only for telemetry time-series; **Redis** for Pub/Sub and geocode cache.
+- Prisma access is `db.orm.public.*` from `src/prisma/db.ts` (no `PrismaClient`). After contract changes run `prisma contract emit`. Do not use `prisma generate` or `@prisma/client`.
+- Prefer Nest 12 APIs: structured logger params, `errorCode` on HTTP exceptions, `enableShutdownHooks()`, `routeConflictPolicy`.
+- Tests: Vitest (`@nestjs/testing` remains runner-agnostic). Do not add Jest.

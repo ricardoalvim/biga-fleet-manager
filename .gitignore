@@ -1,5 +1,7 @@
 # Nestjs specific
 /dist
+/.dist_root_old*
+*.tsbuildinfo
 /node_modules
 /build
 /tmp
@@ -24,3 +26,7 @@ lerna-debug.log*
 .tmp
 
 /generated/prisma
+
+# Prisma 8 emit artifacts live next to the contract and are committed
+# (see prisma contract emit). Keep accidental generated dirs ignored:
+/generated/

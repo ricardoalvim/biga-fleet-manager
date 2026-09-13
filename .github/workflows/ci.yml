@@ -1,0 +1,76 @@
+name: Biga Fleet CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-and-test:
+    name: Lint, Test & Build Validation
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+      postgres:
+        image: postgres:15-alpine
+        environment:
+          POSTGRES_USER: biga_user
+          POSTGRES_PASSWORD: biga_password
+          POSTGRES_DB: biga_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+      mongodb:
+        image: mongo:7-jammy
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Type Check Backend
+        run: npx tsc --noEmit
+
+      - name: Type Check Frontend Portal
+        run: npx tsc -p frontend/tsconfig.json
+
+      - name: Lint Codebase
+        run: npm run lint
+
+      - name: Run Vitest Automated Test Suite
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://biga_user:biga_password@localhost:5432/biga_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          MONGODB_URI: mongodb://localhost:27017/biga_test
+
+      - name: Build Production Backend
+        run: npm run build
+

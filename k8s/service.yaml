@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: biga-fleet-api-service
+  namespace: biga-fleet
+  labels:
+    app: biga-fleet-api
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: biga-fleet-api
+

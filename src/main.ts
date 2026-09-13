@@ -1,18 +1,19 @@
 import { NestFactory } from '@nestjs/core'
-import { ValidationPipe } from '@nestjs/common'
+import { StandardSchemaValidationPipe } from '@nestjs/common'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
-import { AppModule } from './app.module'
+import { AppModule } from './app.module.js'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
+  app.enableShutdownHooks()
+  app.useGlobalPipes(new StandardSchemaValidationPipe())
 
   const config = new DocumentBuilder()
-    .setTitle('SGBR - Sistema Gerenciador de Bigas Romanas')
-    .setDescription('Gateway de Ingestão IoT e Gestão de Frota do Império Romano')
-    .setVersion('1.0')
-    .addTag('Gateway', 'Ingestão de altíssima velocidade')
+    .setTitle('Biga Fleet Manager')
+    .setDescription('PIMS de frotas — ingestão IoT e gestão relacional multi-tenant')
+    .setVersion('2.0')
+    .addApiKey({ type: 'apiKey', name: 'x-tenant-id', in: 'header' }, 'tenant')
     .build()
 
   const document = SwaggerModule.createDocument(app, config)
@@ -20,7 +21,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000
   await app.listen(port)
-  console.log(`[SGBR] Coliseu aberto na porta ${port}`)
-  console.log(`[SGBR] Pergaminhos da API em: http://localhost:${port}/api/docs`)
+  console.log(`[Fleet] API na porta ${port}`)
+  console.log(`[Fleet] Documentação: http://localhost:${port}/api/docs`)
 }
-bootstrap()
+
+void bootstrap()

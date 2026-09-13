@@ -1294,20 +1294,20 @@ const waypoints = geoJsonData.features.map(f => ({
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 let totalCompletedTrips = 0
 
-async function chariotWorker(chariot, workerId) {
+async function vehicleWorker(vehicle, workerId) {
     while (totalCompletedTrips < TRIP_TARGET) {
         try {
-            // 🚩 Início da Trip
             for (let i = 0; i < waypoints.length; i++) {
                 const pos = waypoints[i]
                 const isLastPoint = i === waypoints.length - 1
 
                 const payload = {
-                    bigaId: chariot.id,
+                    tenantId: process.env.TENANT_ID || '00000000-0000-4000-8000-000000000001',
+                    deviceId: vehicle.id,
                     lat: pos.lat,
                     lng: pos.lng,
                     speed: isLastPoint ? 0 : Math.floor(Math.random() * 20) + 30,
-                    isHitched: !isLastPoint, // Gatilho de fechamento no último ponto
+                    ignition: !isLastPoint,
                     timestamp: new Date().toISOString()
                 }
 
@@ -1322,25 +1322,27 @@ async function chariotWorker(chariot, workerId) {
 
             totalCompletedTrips++
             if (totalCompletedTrips % 10 === 0) {
-                console.log(`[Legião] Progresso: ${totalCompletedTrips}/${TRIP_TARGET} trips concluídas.`)
+                console.log(`[Frota] Progresso: ${totalCompletedTrips}/${TRIP_TARGET} trips concluídas.`)
             }
 
         } catch (e) {
-            console.error(`💥 Biga ${chariot.plate} tropeçou:`, e.message)
-            await sleep(5000) // Descanso antes de tentar a próxima jornada
+            console.error(`Veículo ${vehicle.plate} falhou:`, e.message)
+            await sleep(5000)
         }
     }
 }
 
 async function startEnduranceTest() {
-    console.log(`🏛️  Mobilizando a frota completa para 100.000 jornadas em Assis...\n`)
+    console.log(`Mobilizando a frota completa para 100.000 jornadas em Assis...\n`)
 
-    const fleetRes = await fetch(`${BASE_URL}/fleet`)
+    const tenantId = process.env.TENANT_ID || '00000000-0000-4000-8000-000000000001'
+    const fleetRes = await fetch(`${BASE_URL}/vehicles`, {
+        headers: { 'x-tenant-id': tenantId }
+    })
     const fleet = await fleetRes.json()
 
-    // Lança toda a frota disponível em paralelo
-    fleet.forEach((chariot, index) => {
-        chariotWorker(chariot, index)
+    fleet.forEach((vehicle, index) => {
+        vehicleWorker(vehicle, index)
     })
 }
 

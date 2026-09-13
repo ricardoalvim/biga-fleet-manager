@@ -1,0 +1,22 @@
+---
+description: Modular monolith bounded contexts for Biga Fleet Manager PIMS
+alwaysApply: true
+---
+
+# Modular monolith
+
+Biga Fleet Manager is a **PIMS de frotas** (joke origin: locadora de bigas / JPA-JSF 2013). Domain language is **vehicle**, never chariot/biga in code.
+
+Keep bounded contexts isolated. Do not leak Prisma models or trip lifecycle into the IoT gateway.
+
+| Context | Path | Owns |
+|---|---|---|
+| Platform | `src/platform/` | Config, Prisma, Redis, Mongo connection, health, geo utils |
+| Tenancy | `src/tenancy/` | Tenant entity, `x-tenant-id` context, tenant CRUD |
+| Fleet | `src/fleet/` | Relational companies, vehicles, trips, dashboard |
+| Ingestion | `src/ingestion/` | Protocol-agnostic IoT ingest: validate envelope, publish, return 202 |
+| Telemetry | `src/telemetry/` | Mongo writes + trip lifecycle from the bus |
+
+- Relational rows are **tenant-scoped**. Fleet queries always filter `tenantId`.
+- Ingestion payload uses opaque `tenantId` + `deviceId`. No trip start/finish inside ingestion.
+- Cross-context: Fleet may read telemetry collections; Telemetry may call Fleet trip APIs; Ingestion must not import Fleet.

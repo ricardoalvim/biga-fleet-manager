@@ -1,11 +1,16 @@
-import { defineConfig } from '@prisma/config'
+import 'dotenv/config'
+import { definePrismaConfig } from 'prisma/config'
+import { defineConfig as definePostgresConfig } from '@prisma/orm-postgres/config'
 
-export default defineConfig({
-  schema: './prisma/schema.prisma',
-  datasource: {
-    url: process.env.DATABASE_URL
-  },
-  migrations: {
-    seed: 'npx ts-node prisma/seed.ts',
-  }
+export default definePrismaConfig({
+  orm: definePostgresConfig({
+    contract: './src/prisma/contract.prisma',
+    output: './src/prisma',
+    db: {
+      connection: process.env.DATABASE_URL!,
+    },
+    migrations: {
+      dir: 'prisma/orm8-migrations',
+    },
+  }),
 })
